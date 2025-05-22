@@ -1,0 +1,58 @@
+{
+  "name": "fundive",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "test-token": "ts-node --esm packages/backend/src/utils/test-token.ts"
+  },
+  "devDependencies": {
+    "@shadcn/ui": "^0.0.4",
+    "@types/node": "^22.13.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8",
+    "prettier": "^3.2.5",
+    "prisma": "^5.9.1",
+    "tailwindcss": "^3.4.1",
+    "turbo": "^2.3.4",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.812.0",
+    "@aws-sdk/s3-request-presigner": "^3.812.0",
+    "@prisma/client": "^5.9.1",
+    "@stripe/stripe-js": "^5.6.0",
+    "@types/form-data": "^2.5.2",
+    "@types/geoip-lite": "^1.4.4",
+    "@types/js-cookie": "^3.0.6",
+    "@types/multer": "^1.4.12",
+    "@types/socket.io": "^3.0.2",
+    "@types/socket.io-client": "^3.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
+    "form-data": "^4.0.1",
+    "geoip-lite": "^1.4.10",
+    "js-cookie": "^3.0.5",
+    "multer": "1.4.5-lts.2",
+    "node-cache": "^5.1.2",
+    "react-icons": "^5.5.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "stripe": "^17.6.0",
+    "tailwind-merge": "^3.0.1"
+  }
+}

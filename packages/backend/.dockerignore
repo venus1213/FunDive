@@ -1,0 +1,29 @@
+# バージョン管理
+.git
+.gitignore
+
+# 依存関係
+node_modules
+dist
+
+# 環境設定
+.env
+.env.*
+!.env.example
+
+# ログ
+*.log
+
+# キャッシュ
+.cache
+.npm
+.pnpm-store
+
+# エディタ設定
+.vscode
+.idea
+
+# その他
+.DS_Store
+README.md
+*.md 

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "277358581441",
+    "project_id": "fundive-c795f",
+    "storage_bucket": "fundive-c795f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277358581441:android:e5b62d5401963ff78da640",
+        "android_client_info": {
+          "package_name": "jp.fundive.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "277358581441-n95j9n9opo4kdjsqmupeu8vr4f0gdlrn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "jp.fundive.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "277358581441-af1e0kfel8r1ghajhcqknr1be4le0d1m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDPs-VEEHJpmzfLok6rHNl96deetz3CrQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "277358581441-af1e0kfel8r1ghajhcqknr1be4le0d1m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

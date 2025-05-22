@@ -1,0 +1,710 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator zod {
+  provider = "zod-prisma-types"
+  output = "../src/types/schemas/prisma-generated"
+  // キャメルケースに統一
+  useMultipleFiles = true // 各モデルを別ファイルに生成
+  createInputTypes = true // 入力型の生成
+  createModelTypes = true // モデル型の生成
+  addInputTypeValidation = true // バリデーションの追加
+  addIncludeType = true // includeの型を生成
+  addSelectType = true // selectの型を生成
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  firebaseUid       String?  @unique  // Firebase認証用のUID
+  name              String?
+  role              Role     @default(entrepreneur)
+  planType          PlanType @default(free)
+  isAdmin           Boolean  @default(false)
+  isVerified        Boolean  @default(false)
+  verificationToken String?  @unique
+  resetPasswordToken String?
+  resetPasswordExpires DateTime?
+  invitationExpires  DateTime? // 招待期限
+  invitedBy          String?   // 招待者のID
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  isFirstLogin      Boolean  @default(true)  // 追加：初回ログインフラグ
+
+  // Relations
+  profile           Profile?
+  projects          Project[]
+  sentMessages      Message[]  @relation("SentMessages")
+  receivedMessages  Message[]  @relation("ReceivedMessages")
+  bookmarks         Bookmark[]
+  reports           Report[]   @relation("ReporterUser")
+  notifications     Notification[]
+  notificationArchives NotificationArchive[]
+  notificationSetting NotificationSetting?
+  subscription      Subscription?
+  pendingSubscription PendingSubscription?
+  subscriptionHistory SubscriptionHistory[]
+  activityLogs      ActivityLog[]
+  payments          Payment[]
+  errorLogs         ErrorLog[]
+  mentionedInMessages Message[] @relation("MentionedInMessages")
+  createdInvitations InvitationCode[] @relation("CreatedInvitations")
+  usedInvitations    InvitationCode[] @relation("UsedInvitations")
+  createdTemplates  EmailTemplate[] @relation("CreatedTemplates")
+  updatedTemplates  EmailTemplate[] @relation("UpdatedTemplates")
+  sentEmails        EmailLog[]
+  articles          Article[]
+
+  @@map("users")
+}
+
+model Project {
+  id              String        @id @default(uuid())
+  userId          String
+  title           String
+  description     String        @db.Text
+  category        Category
+  projectType     ProjectType
+  status          ProjectStatus @default(draft)
+  investmentAmount Float?
+  location        String?
+  projectStage    ProjectStage?
+  popularityScore Float         @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id])
+  messages  Message[]
+  bookmarks Bookmark[]
+  reports   Report[]   @relation("ProjectReports")
+
+  @@map("projects")
+}
+
+model Message {
+  id          String      @id @default(uuid())
+  senderId    String
+  receiverId  String
+  projectId   String?
+  content     String
+  isRead      Boolean     @default(false)
+  messageType MessageType
+  createdAt   DateTime    @default(now())
+  mentionedUsers User[]   @relation("MentionedInMessages")
+
+  // Relations
+  sender    User    @relation("SentMessages", fields: [senderId], references: [id])
+  receiver  User    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  @@map("messages")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
+  @@map("bookmarks")
+}
+
+model Report {
+  id            String      @id @default(uuid())
+  reporterId    String
+  targetType    ReportType
+  targetId      String
+  reason        ReportReason
+  status        ReportStatus @default(pending)
+  comment       String?      @db.Text
+  adminComment  String?      @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  reporter      User        @relation("ReporterUser", fields: [reporterId], references: [id])
+  project       Project?    @relation("ProjectReports", fields: [targetId], references: [id])
+
+  @@map("reports")
+}
+
+model Notification {
+  id          String          @id @default(uuid())
+  userId      String
+  type        NotificationType
+  title       String
+  content     String
+  isRead      Boolean         @default(false)
+  relatedId   String?
+  createdAt   DateTime        @default(now())
+
+  // Relations
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          String          @id @default(uuid())
+  userId      String?
+  actionType  ActionType
+  targetType  ActivityTargetType
+  targetId    String?
+  details     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime        @default(now())
+
+  // Relations
+  user        User?           @relation(fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model NotificationSetting {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  emailEnabled          Boolean   @default(true)
+  directMessageEnabled  Boolean   @default(true)
+  projectMessageEnabled Boolean   @default(true)
+  mentionEnabled        Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id])
+
+  @@map("notification_settings")
+}
+
+model Subscription {
+  id                  String    @id @default(uuid())
+  userId              String    @unique
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  status              SubscriptionStatus
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  cancelAtPeriodEnd   Boolean   @default(false)
+  nextPlanPriceId     String?
+  nextPlanStartDate   DateTime?
+  prorationAmount     Float?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  user                User      @relation(fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Profile {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  name            String?
+  displayName     String?
+  bio             String?   @db.Text
+  company         String?
+  position        String?
+  location        String?
+  website         String?
+  social_links    Json?
+  skills          String[]
+  interests       String[]
+  is_public       Boolean   @default(false)
+  visible_fields  String[]
+  profile_image_url String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+model Payment {
+  id              String    @id @default(uuid())
+  userId          String
+  amount          Float
+  currency        String    @default("JPY")
+  status          PaymentStatus
+  paymentMethod   PaymentMethod
+  stripePaymentId String?
+  description     String?
+  metadata        Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+  transactions    Transaction[]
+
+  @@map("payments")
+}
+
+model Transaction {
+  id              String    @id @default(uuid())
+  paymentId       String
+  type            TransactionType
+  amount          Float
+  status          TransactionStatus
+  stripeTransactionId String?
+  metadata        Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  payment         Payment   @relation(fields: [paymentId], references: [id])
+
+  @@map("transactions")
+}
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String
+  error     String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+}
+
+model SubscriptionHistory {
+  id                  String            @id @default(cuid())
+  userId              String
+  planName            String
+  amount              Int
+  status             SubscriptionStatus
+  stripeSubscriptionId String
+  previousPlanType    PlanType?        // 変更前のプランタイプ
+  newPlanType         PlanType         // 変更後のプランタイプ
+  metadata            Json?            // メタデータ（productId, priceId, interval, intervalCount など）
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  user                User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model PendingSubscription {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  planType      PlanType
+  billingCycle  String
+  status        String    @default("pending")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@map("pending_subscriptions")
+}
+
+model ProcessedStripeEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  type        String
+  processedAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model NotificationArchive {
+  id          String          @id @default(uuid())
+  originalId  String          // 元の通知のID
+  userId      String
+  type        NotificationType
+  title       String
+  content     String
+  isRead      Boolean         @default(false)
+  relatedId   String?
+  createdAt   DateTime        @default(now())
+  archivedAt  DateTime        @default(now())
+
+  // Relations
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("notification_archives")
+}
+
+model InvitationCode {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  createdById   String    // 作成した管理者のID
+  usedById      String?   // 使用したユーザーのID
+  expiresAt     DateTime
+  isUsed        Boolean   @default(false)
+  isActive      Boolean   @default(true)  // 追加：管理者による有効/無効フラグ
+  maxUses       Int       @default(1)
+  currentUses   Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  createdBy     User      @relation("CreatedInvitations", fields: [createdById], references: [id])
+  usedBy        User?     @relation("UsedInvitations", fields: [usedById], references: [id])
+
+  @@map("invitation_codes")
+}
+
+model EmailTemplate {
+  id          String    @id @default(uuid())
+  name        String    // テンプレート名
+  subject     String    // メールの件名
+  body        String    @db.Text  // メールの本文（HTMLまたはテキスト）
+  type        EmailTemplateType  // テンプレートの種類
+  variables   Json?     // 使用可能な変数の定義
+  isActive    Boolean   @default(true)
+  previewData Json?     // プレビュー用のサンプルデータ
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String    // 作成した管理者のID
+  updatedBy   String?   // 最後に更新した管理者のID
+
+  // Relations
+  creator     User      @relation("CreatedTemplates", fields: [createdBy], references: [id])
+  updater     User?     @relation("UpdatedTemplates", fields: [updatedBy], references: [id])
+  sentEmails  EmailLog[]
+  abTests     EmailABTest[]
+  schedules   EmailSchedule[]
+
+  @@map("email_templates")
+}
+
+model EmailABTest {
+  id            String    @id @default(uuid())
+  templateId    String
+  name          String
+  description   String?   @db.Text
+  variantA      Json     // バリアントAの内容（subject, body）
+  variantB      Json     // バリアントBの内容（subject, body）
+  startDate     DateTime
+  endDate       DateTime
+  status        EmailABTestStatus @default(DRAFT)
+  winningVariant String?  // 勝者バリアント（"A" or "B"）
+  metrics       Json?     // テスト結果のメトリクス
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  template      EmailTemplate @relation(fields: [templateId], references: [id])
+  testResults   EmailABTestResult[]
+
+  @@map("email_ab_tests")
+}
+
+model EmailABTestResult {
+  id          String    @id @default(uuid())
+  testId      String
+  variant     String    // "A" or "B"
+  emailId     String
+  opened      Boolean   @default(false)
+  clicked     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  test        EmailABTest @relation(fields: [testId], references: [id])
+  email       EmailLog    @relation(fields: [emailId], references: [id])
+
+  @@map("email_ab_test_results")
+}
+
+model EmailSchedule {
+  id            String    @id @default(uuid())
+  templateId    String
+  name          String
+  description   String?   @db.Text
+  recipientIds  String[]  // 送信先ユーザーID配列
+  scheduleType  EmailScheduleType
+  cronExpression String?  // 定期実行用のcron式
+  sendAt        DateTime? // 一回限りの送信日時
+  variables     Json?     // テンプレート変数の値
+  status        EmailScheduleStatus @default(ACTIVE)
+  lastRunAt     DateTime? // 最後に実行された日時
+  nextRunAt     DateTime? // 次回の実行予定日時
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  template      EmailTemplate @relation(fields: [templateId], references: [id])
+  executionLogs EmailScheduleExecutionLog[]
+
+  @@map("email_schedules")
+}
+
+model EmailScheduleExecutionLog {
+  id          String    @id @default(uuid())
+  scheduleId  String
+  status      EmailScheduleExecutionStatus
+  emailLogId  String?   // 送信に成功した場合のEmailLogのID
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  schedule    EmailSchedule @relation(fields: [scheduleId], references: [id])
+  emailLog    EmailLog?     @relation(fields: [emailLogId], references: [id])
+
+  @@map("email_schedule_execution_logs")
+}
+
+model EmailLog {
+  id            String    @id @default(uuid())
+  templateId    String
+  recipientIds  String[]  // 送信先ユーザーID配列
+  subject       String    // 実際に送信された件名
+  body          String    @db.Text  // 実際に送信された本文
+  status        EmailStatus
+  sentAt        DateTime  @default(now())
+  sentBy        String    // 送信した管理者のID
+  metadata      Json?     // 送信時のメタデータ
+  errorDetails  String?   @db.Text  // エラー発生時の詳細
+
+  // Relations
+  template      EmailTemplate  @relation(fields: [templateId], references: [id])
+  sender        User          @relation(fields: [sentBy], references: [id])
+  abTestResults EmailABTestResult[]
+  scheduleExecutions EmailScheduleExecutionLog[]
+
+  @@map("email_logs")
+}
+
+model Article {
+  id          String    @id @default(uuid())
+  slug        String    @unique
+  title       String
+  description String    @db.Text
+  content     String    @db.Text
+  thumbnail   String
+  publishedAt DateTime
+  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now())
+  authorId    String
+  status      ArticleStatus @default(draft)
+  tags        String[]
+  
+  // Relations
+  author      User      @relation(fields: [authorId], references: [id])
+
+  @@map("articles")
+}
+
+enum Role {
+  entrepreneur
+  investor
+  admin
+}
+
+enum PlanType {
+  free
+  standard
+  premium
+  startup_partner
+}
+
+enum Category {
+  tech
+  finance
+  retail
+  healthcare
+  education
+  other
+}
+
+enum ProjectType {
+  entrepreneur
+  investor
+  cofounder
+}
+
+enum ProjectStatus {
+  draft
+  active
+  suspended
+}
+
+enum ProjectStage {
+  idea
+  mvp
+  early_stage
+  growth
+  mature
+}
+
+enum MessageType {
+  direct
+  project
+}
+
+enum ReportType {
+  user
+  project
+  message
+}
+
+enum ReportReason {
+  spam
+  inappropriate_content
+  harassment
+  scam
+  other
+}
+
+enum ReportStatus {
+  pending
+  investigating
+  resolved
+  rejected
+}
+
+enum NotificationType {
+  message_received
+  project_liked
+  project_bookmarked
+  project_commented
+  project_status_changed
+  user_mentioned
+  report_status_changed
+  subscription_expiring
+  subscription_payment_failed
+  system_announcement
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+  unpaid
+  trialing
+  upgraded
+  downgrade_scheduled
+  pending_downgrade
+  incomplete
+  incomplete_expired
+  paused
+}
+
+enum ActionType {
+  auth
+  login
+  logout
+  create
+  update
+  delete
+  report
+  admin_action
+  read
+  use
+  validate
+  search
+}
+
+enum ActivityTargetType {
+  user
+  project
+  message
+  report
+  notification
+  subscription
+  invitation
+  email
+  admin
+  bookmark
+  stats
+}
+
+enum PaymentStatus {
+  pending
+  processing
+  completed
+  failed
+  refunded
+  cancelled
+}
+
+enum PaymentMethod {
+  credit_card
+  bank_transfer
+  convenience_store
+}
+
+enum TransactionType {
+  payment
+  refund
+  transfer
+  adjustment
+}
+
+enum TransactionStatus {
+  pending
+  completed
+  failed
+  reversed
+}
+
+enum EmailTemplateType {
+  NOTIFICATION    // 通知メール
+  MARKETING       // マーケティングメール
+  ANNOUNCEMENT    // お知らせ
+  REMINDER        // リマインダー
+  CUSTOM          // カスタムメール
+}
+
+enum EmailStatus {
+  PENDING     // 送信待ち
+  SENT        // 送信済み
+  FAILED      // 送信失敗
+  CANCELLED   // キャンセル
+}
+
+enum EmailABTestStatus {
+  DRAFT       // 下書き
+  ACTIVE      // 実行中
+  COMPLETED   // 完了
+  CANCELLED   // キャンセル
+}
+
+enum EmailScheduleType {
+  ONE_TIME    // 一回限り
+  RECURRING   // 定期実行
+}
+
+enum EmailScheduleStatus {
+  ACTIVE      // 有効
+  PAUSED      // 一時停止
+  COMPLETED   // 完了
+  CANCELLED   // キャンセル
+}
+
+enum EmailScheduleExecutionStatus {
+  SUCCESS     // 成功
+  FAILED      // 失敗
+  SKIPPED     // スキップ
+}
+
+enum ArticleStatus {
+  draft
+  published
+  archived
+} 

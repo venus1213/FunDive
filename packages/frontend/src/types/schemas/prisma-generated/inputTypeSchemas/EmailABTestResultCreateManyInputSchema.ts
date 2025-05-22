@@ -1,0 +1,15 @@
+import type { Prisma } from '@prisma/client';
+
+import { z } from 'zod';
+
+export const EmailABTestResultCreateManyInputSchema: z.ZodType<Prisma.EmailABTestResultCreateManyInput> = z.object({
+  id: z.string().uuid().optional(),
+  testId: z.string(),
+  variant: z.string(),
+  emailId: z.string(),
+  opened: z.boolean().optional(),
+  clicked: z.boolean().optional(),
+  createdAt: z.coerce.date().optional()
+}).strict();
+
+export default EmailABTestResultCreateManyInputSchema;

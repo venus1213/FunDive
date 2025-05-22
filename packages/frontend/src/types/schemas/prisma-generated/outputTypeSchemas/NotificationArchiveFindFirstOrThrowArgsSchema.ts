@@ -1,0 +1,37 @@
+import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
+import { NotificationArchiveIncludeSchema } from '../inputTypeSchemas/NotificationArchiveIncludeSchema'
+import { NotificationArchiveWhereInputSchema } from '../inputTypeSchemas/NotificationArchiveWhereInputSchema'
+import { NotificationArchiveOrderByWithRelationInputSchema } from '../inputTypeSchemas/NotificationArchiveOrderByWithRelationInputSchema'
+import { NotificationArchiveWhereUniqueInputSchema } from '../inputTypeSchemas/NotificationArchiveWhereUniqueInputSchema'
+import { NotificationArchiveScalarFieldEnumSchema } from '../inputTypeSchemas/NotificationArchiveScalarFieldEnumSchema'
+import { UserArgsSchema } from "../outputTypeSchemas/UserArgsSchema"
+// Select schema needs to be in file to prevent circular imports
+//------------------------------------------------------
+
+export const NotificationArchiveSelectSchema: z.ZodType<Prisma.NotificationArchiveSelect> = z.object({
+  id: z.boolean().optional(),
+  originalId: z.boolean().optional(),
+  userId: z.boolean().optional(),
+  type: z.boolean().optional(),
+  title: z.boolean().optional(),
+  content: z.boolean().optional(),
+  isRead: z.boolean().optional(),
+  relatedId: z.boolean().optional(),
+  createdAt: z.boolean().optional(),
+  archivedAt: z.boolean().optional(),
+  user: z.union([z.boolean(),z.lazy(() => UserArgsSchema)]).optional(),
+}).strict()
+
+export const NotificationArchiveFindFirstOrThrowArgsSchema: z.ZodType<Prisma.NotificationArchiveFindFirstOrThrowArgs> = z.object({
+  select: NotificationArchiveSelectSchema.optional(),
+  include: z.lazy(() => NotificationArchiveIncludeSchema).optional(),
+  where: NotificationArchiveWhereInputSchema.optional(),
+  orderBy: z.union([ NotificationArchiveOrderByWithRelationInputSchema.array(),NotificationArchiveOrderByWithRelationInputSchema ]).optional(),
+  cursor: NotificationArchiveWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ NotificationArchiveScalarFieldEnumSchema,NotificationArchiveScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export default NotificationArchiveFindFirstOrThrowArgsSchema;
